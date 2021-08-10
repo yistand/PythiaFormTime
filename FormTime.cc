@@ -26,7 +26,8 @@
 
 using namespace Pythia8;
 
-int verbose = 1;		// Print More information (1), less information (0)
+int verbose = 0;		// Print More information (1), less information (0)
+int warning = 1;		// Print warning msg (1), no warning msg (0)
 
 //Initializing Structure: myParticle (no, formation time, integrated formation time) 
 struct myParticle {
@@ -44,11 +45,13 @@ double CalFormTimeFrom4Da(Vec4 daughter1, Vec4 daughter2) {	// calculate formati
 	if(kt>0 || kt<0) {
 		time = 2.*mother.e()*x*(1.-x)/pow(kt,2);
 	}
-	if(verbose) {
-		if(x>1 || time > 1000) {
-			cout<<"WARNING!!! Mother energy less than daughter"<<endl<<"mother: "<<mother<<" daughter1: "<<daughter1<<" daugther2: "<<daughter2<<endl;
+	if(warning) {
+		if(x>1 || (time > 1000 && fabs(mother.eta())<2)) {
+			if(x>1) cout<<"WARNING!!! Mother energy less than daughter"<<endl;
+			if(time>1000) cout<<"WARNING!!! Long time at mid-rapidity"<<endl;
+			cout<<" mother: "<<mother<<" daughter1: "<<daughter1<<" daugther2: "<<daughter2;
 			cout<<"mother x daughter1 = "<<cross3(mother,daughter1).pAbs()<<" mother.pAbs = "<<mother.pAbs()<<endl;
-			cout<<"x="<<x<<" kt="<<kt<<" time="<<time;
+			cout<<"x="<<x<<" kt="<<kt<<" time="<<time<<endl<<endl;
 		}
 	}
 	return time;
@@ -78,6 +81,9 @@ bool TraceShower(Event &event, int ip, double currentTime, int i_currentMaxE, ve
 		return true;			// END of this chain
 	}
 	else if(p.daughterList().size()==1) {	// the particle has a "carbon copy" as its sole daughter, but with changed momentum as a "recoil" effect, e.g. in a shower;
+		if(event[p.daughter1()].motherList().size()>1) {	// more than 1 mom
+			if(warning) cout<<"WARNING!!! "<<ip<<" invovled in "<< event[p.daughter1()].motherList().size()<<" -> 1 process"<<endl;
+		}
 
 		//Use formation time = 0 for 1->1
 		struct myParticle da;
@@ -95,61 +101,117 @@ bool TraceShower(Event &event, int ip, double currentTime, int i_currentMaxE, ve
 
 		TraceShower(event, p.daughter1(), da.totalTime, i_currentMaxE, tc, FinalList);
 	}
-	else if(p.daughterList().size()==2) {	// 1->2
+	else if(p.daughterList().size()==2) {	// 2 daughters
 
-		if(verbose) cout<<"1->2: "<<ip<<"(currentMaxE="<<i_currentMaxE<<") - ";
+		if(event[p.daughter1()].motherList().size()==1) {	// 1->2
 
-		struct myParticle da1;
-		da1.no = p.daughter1();
-		//da1.time = CalFormTime(event[i_currentMaxE].p(), event[p.daughter1()].p());
-		//da1.time = CalFormTime(p.p(), event[p.daughter1()].p());
-		//da1.time = CalFormTime(event[p.iTopCopy()].p(), event[p.daughter1()].p());
-		//da1.totalTime = da1.time + currentTime;
-		//tc.push_back(da1);
-		//if(verbose) cout<<" ("<<da1.no<<", "<<da1.time<<" ,"<<da1.totalTime<<") ";
+			if(verbose) cout<<"1->2: "<<ip<<"(currentMaxE="<<i_currentMaxE<<") - ";
 
-		struct myParticle da2;
-		da2.no = p.daughter2();
-		//da2.time = CalFormTime(event[i_currentMaxE].p(), event[p.daughter2()].p());
-		//da2.time = CalFormTime(p.p(), event[p.daughter2()].p());
-		//da2.time = CalFormTime(event[p.iTopCopy()].p(), event[p.daughter2()].p());
+			struct myParticle da1;
+			da1.no = p.daughter1();
+			//da1.time = CalFormTime(event[i_currentMaxE].p(), event[p.daughter1()].p());
+			//da1.time = CalFormTime(p.p(), event[p.daughter1()].p());
+			//da1.time = CalFormTime(event[p.iTopCopy()].p(), event[p.daughter1()].p());
+			//da1.totalTime = da1.time + currentTime;
+			//tc.push_back(da1);
+			//if(verbose) cout<<" ("<<da1.no<<", "<<da1.time<<" ,"<<da1.totalTime<<") ";
 
-		double deltaTime = CalFormTimeFrom4Da(event[p.daughter1()].p(),event[p.daughter2()].p());
-		cout<<"Delta time = "<<deltaTime<<" -> ";
+			struct myParticle da2;
+			da2.no = p.daughter2();
+			//da2.time = CalFormTime(event[i_currentMaxE].p(), event[p.daughter2()].p());
+			//da2.time = CalFormTime(p.p(), event[p.daughter2()].p());
+			//da2.time = CalFormTime(event[p.iTopCopy()].p(), event[p.daughter2()].p());
 
-		da1.time = deltaTime;
-		da2.time = deltaTime;
+			double deltaTime = CalFormTimeFrom4Da(event[p.daughter1()].p(),event[p.daughter2()].p());
+			if(verbose) cout<<"Delta time = "<<deltaTime<<" -> ";
 
-		da1.totalTime = da1.time + currentTime;
-		tc.push_back(da1);
-		if(verbose) cout<<" ("<<da1.no<<", "<<da1.time<<" ,"<<da1.totalTime<<") ";
+			da1.time = deltaTime;
+			da2.time = deltaTime;
 
-		da2.totalTime = da2.time + currentTime;
-		tc.push_back(da2);
-		if(verbose) cout<<" ("<<da2.no<<", "<<da2.time<<" ,"<<da2.totalTime<<") "<<endl;
+			da1.totalTime = da1.time + currentTime;
+			tc.push_back(da1);
+			if(verbose) cout<<" ("<<da1.no<<", "<<da1.time<<" ,"<<da1.totalTime<<") ";
 
-		//cout<<"Sum Vec4 Direct"<<p.p()-(event[p.daughter1()].p()+event[p.daughter2()].p())<<endl;
-		//cout<<"Top: "<<p.iTopCopy()<<endl;
-		//cout<<"Sum Vec4 Top"<<event[p.iTopCopy()].p()-(event[p.daughter1()].p()+event[p.daughter2()].p())<<endl;
+			da2.totalTime = da2.time + currentTime;
+			tc.push_back(da2);
+			if(verbose) cout<<" ("<<da2.no<<", "<<da2.time<<" ,"<<da2.totalTime<<") "<<endl;
 
-		
-		//if(verbose) {
-		//	if(p.e()<event[da1.no].e()) {
-		//		cout<<"WARNING!!! MOTHER energy less than daughter. Mother: "<<ip<<" i_currentMaxE "<<i_currentMaxE<<" "<<event[i_currentMaxE].name()<<" "<<event[i_currentMaxE].p()<<" Daughter1: "<<da1.no<<" "<<event[da1.no].name()<<" "<<event[da1.no].p()<<" Daughter2: "<<da2.no<<" "<<event[da2.no].name()<<" "<<event[da2.no].p()<<endl;
-		//		//event.list();
-		//	}
-		//}
+			//cout<<"Sum Vec4 Direct"<<p.p()-(event[p.daughter1()].p()+event[p.daughter2()].p())<<endl;
+			//cout<<"Top: "<<p.iTopCopy()<<endl;
+			//cout<<"Sum Vec4 Top"<<event[p.iTopCopy()].p()-(event[p.daughter1()].p()+event[p.daughter2()].p())<<endl;
+
+			
+			//if(verbose) {
+			//	if(p.e()<event[da1.no].e()) {
+			//		cout<<"WARNING!!! MOTHER energy less than daughter. Mother: "<<ip<<" i_currentMaxE "<<i_currentMaxE<<" "<<event[i_currentMaxE].name()<<" "<<event[i_currentMaxE].p()<<" Daughter1: "<<da1.no<<" "<<event[da1.no].name()<<" "<<event[da1.no].p()<<" Daughter2: "<<da2.no<<" "<<event[da2.no].name()<<" "<<event[da2.no].p()<<endl;
+			//		//event.list();
+			//	}
+			//}
 
 
 
 
-		// i_currentMaxE shall be reset for each daughter to find their max energy copies
-		TraceShower(event, p.daughter1(), da1.totalTime, p.daughter1(), tc, FinalList);
-		TraceShower(event, p.daughter2(), da2.totalTime, p.daughter2(), tc, FinalList);
+			// i_currentMaxE shall be reset for each daughter to find their max energy copies
+			TraceShower(event, p.daughter1(), da1.totalTime, p.daughter1(), tc, FinalList);
+			TraceShower(event, p.daughter2(), da2.totalTime, p.daughter2(), tc, FinalList);
+		}
+		else if(event[p.daughter1()].motherList().size()==2) {	// 2->2
+			if(verbose) {
+				cout<<"2->2: ("<<event[p.daughter1()].motherList()[0]<<" + " <<event[p.daughter1()].motherList()[1]<<") -> ("<<p.daughter1()<<" + "<<p.daughter2()<<")"<< endl;
+			}
+			// Need to check whether daughters have been looped already
+			bool Checked = false;
+			vector<myParticle>::iterator idl = tc.begin();
+			for(  ; idl!=tc.end(); idl++) {
+				if(idl->no==p.daughter1()) {
+					Checked = true;
+					break;
+				}
+			}
+			if(Checked) {	// if found, compare time record and proceed with the larger total time
+				if(currentTime < idl->totalTime) {
+					currentTime = idl->totalTime;
+
+				}	// end if
+				else {
+					idl->totalTime = currentTime;
+				}
+				struct myParticle da2;
+				da2.no = p.daughter2();
+				da2.time = 0;
+				da2.totalTime = da2.time + currentTime;
+
+				tc.push_back(da2);	// add daughter2, too
+
+				if(verbose) cout<<"Was here before. currentTime = "<<currentTime<<endl;
+
+				// Continue with two daugthers' tracing
+				TraceShower(event, p.daughter1(), idl->totalTime, p.daughter1(), tc, FinalList);
+				TraceShower(event, p.daughter2(), da2.totalTime, p.daughter2(), tc, FinalList);
+
+
+
+			}	// end if 
+			else {	// Checked = false. the first time to meet this daugther, push back the daughter info into TimeChain for later comparison of 2->2's two mother times
+				struct myParticle da;
+				da.no = p.daughter1();
+				da.time = 0; 
+				da.totalTime = da.time + currentTime;
+
+				tc.push_back(da);
+
+				if(verbose) cout<<"first time here. currentTime = "<<currentTime<<endl;
+
+				return true;	// Hold the trace for now. Until we find the other mother particle for comparison
+			}
+		}	// end 2->2
+		else {
+			if(warning) cout<<"WARNING!!! "<<ip<<" invovled in "<< event[p.daughter1()].motherList().size()<<" -> "<< p.daughterList().size()<<" process"<<endl;
+		}
 
 	}
 	else {
-		if(verbose) cout<<"Number of daughters: "<<p.daughterList().size()<<endl;
+		if(warning) cout<<"WARNNING!! Number of daughters: "<<p.daughterList().size()<<endl;
 	}
 	return false;
 }
@@ -187,7 +249,7 @@ int main(int argc, char* argv[]) {
 	TH1D *hTime = new TH1D("hTime","Formation Time of Final Particles",1000,-100,100);
 
 	// Begin event loop. Generate event; skip if generation aborted.
-	for (int iEvent = 0; iEvent < 1; ++iEvent) {
+	for (int iEvent = 0; iEvent < 1000; ++iEvent) {
 		if (!pythia.next()) continue;
 
 		if(iEvent%1000==0) cout<<"event "<<iEvent<<endl;
@@ -293,7 +355,7 @@ int main(int argc, char* argv[]) {
 						break;
 					}
 				}
-				if(!ifound && verbose) cout<<"WARNING!! Final particle "<<k<<" not in TimeChain"<<endl;
+				if(!ifound && warning) cout<<"WARNING!! Final particle "<<k<<" not in TimeChain"<<endl;
 
 			}
 		}
