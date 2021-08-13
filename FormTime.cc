@@ -1,3 +1,13 @@
+//===========================================================
+//
+// 2021.08.13
+// Li Yi
+// This program is to calculate/set parton formation time
+// 
+// based on PYTHIA example main91.cc
+//
+//===========================================================
+// Original message:
 // main91.cc is a part of the PYTHIA event generator.
 // Copyright (C) 2018 Torbjorn Sjostrand.
 // PYTHIA is licenced under the GNU GPL v2 or later, see COPYING for details.
@@ -220,7 +230,20 @@ int main(int argc, char* argv[]) {
 		pTHat_Max = atoi(argv[3]);
 	}
 
+	int JobId = -1;		// If not -1, will update output .dat name for muliple jobs & use this as random seed
+
+	if(argc==5) {		// use this only for job on cluster 
+		Nevents = atoi(argv[1]);
+		pTHat_Min = atoi(argv[2]);
+		pTHat_Max = atoi(argv[3]);
+		JobId = atoi(argv[4]);
+	}
+
 	cout<<Nevents<<" events with pT: "<<pTHat_Min<<" - "<<pTHat_Max<<endl<<endl;
+	if(argc==5) {		// if on cluster
+		cout<<"JobId as random seed = "<<JobId<<endl;
+	}
+	
 
 	// Create Pythia instance and set it up to generate hard QCD processes
 	// pTHat = 20 GeV - 25 GeV for pp collisions at 200 GeV.
@@ -257,16 +280,25 @@ int main(int argc, char* argv[]) {
 	if(!verbose) pythia.readString("Print:quiet = on");
 
 	// Set Random seed for replicable result
-	//pythia.readString("Random:setSeed = on");
-	//pythia.readString("Random:seed = 2021");
+	if(JobId!=-1) {
+		pythia.readString("Random:setSeed = on");
+		sprintf(StringName,"Random:seed = %i",JobId);
+		pythia.readString(StringName);
+	}
 
 	pythia.init();
 
 	// Create file on which histogram(s) can be saved && dat files
-	TFile* outFile = new TFile("hist.root", "RECREATE");
+	//TFile* outFile = new TFile("hist.root", "RECREATE");
 	ofstream fParton;
-	sprintf(StringName,"parton_pTHat%03d_to%03d.dat",pTHat_Min,pTHat_Max);
+	if(JobId==-1) {
+		sprintf(StringName,"../JETSCAPE/pythiaInput/parton_pTHat%03d_to%03d.dat",pTHat_Min,pTHat_Max);
+	}
+	else 	{
+		sprintf(StringName,"../JETSCAPE/pythiaInput/parton_pTHat%03d_to%03d_Job%d.dat",pTHat_Min,pTHat_Max,JobId);
+	}
 	fParton.open(StringName,ios::out);
+	cout<<"Output: "<<StringName<<endl;
 
 
 	// Book histogram.
@@ -420,10 +452,10 @@ int main(int argc, char* argv[]) {
 	//gPad->WaitPrimitive();
 
 	// Save histogram on file and close file.
-	mult->Write();
-	hTime->Write();
-	hTimeVspT->Write();
-	delete outFile;
+	//mult->Write();
+	//hTime->Write();
+	//hTimeVspT->Write();
+	//delete outFile;
 	
 	fParton.close();
 
