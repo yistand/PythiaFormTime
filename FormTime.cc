@@ -27,6 +27,7 @@
 // ROOT, for histogramming.
 #include "TH1.h"
 #include "TH2.h"
+#include "TProfile.h"
 
 // ROOT, for interactive graphics.
 #include "TVirtualPad.h"
@@ -35,12 +36,14 @@
 // ROOT, for saving file.
 #include "TFile.h"
 
+#define MINIMALPT 0.1		// if pTHat_Min is too small, do softQCD & cut off on pTHat_Max. just use a value which is small.
+
 using namespace Pythia8;
 
 int verbose = 0;		// Print More information (1), less information (0)
 int warning = 0;		// Print warning msg (1), no warning msg (0)
 
-//Initializing Structure: myParticle (no, formation time, integrated formation time) 
+//Initializing Structure: myParticle (its number, formation time, integrated formation time) 
 struct myParticle {
 	int no;
 	double time;
@@ -254,12 +257,22 @@ int main(int argc, char* argv[]) {
 	pythia.readString("Beams:idA = 2212");
 	pythia.readString("Beams:idB = 2212");
 
-	pythia.readString("HardQCD:all = on");
 	char StringName[400];
-	sprintf(StringName,"PhaseSpace:pTHatMin = %i",pTHat_Min);
-	pythia.readString(StringName);
-	sprintf(StringName,"PhaseSpace:pTHatMax = %i",pTHat_Max);
-	pythia.readString(StringName);
+	if(pTHat_Min<MINIMALPT) {		// do softqcd & cut off at pTHat_Max
+		pythia.readString("SoftQCD:nonDiffractive = on");
+		pythia.readString("HardQCD:all = off");
+	}
+	else {
+		pythia.readString("SoftQCD:nonDiffractive = off");
+		pythia.readString("HardQCD:all = on");
+		sprintf(StringName,"PhaseSpace:pTHatMin = %i",pTHat_Min);
+		pythia.readString(StringName);
+		sprintf(StringName,"PhaseSpace:pTHatMax = %i",pTHat_Max);
+		pythia.readString(StringName);
+		//pythia.readString("PhaseSpace:bias2Selection = on");	// Switch on a biased phase space sampling, with compensatingly weighted events, for 2 → 2 processes.
+		//pythia.readString("PhaseSpace:bias2SelectionPow = 6");	// A 2 → 2 process at a scale pTHat will be oversampled in phase space by an amount (pTHat/pTRef)^pow, where you set the power pow here. Events are assigned a compensating weight the inverse of this, i.e. Info::weight() will return (pTRef/pTHat)^pow. This weight should then be used in the histogramming of event properties. The final overall normalization also involves the Info::weightSum() value.
+		pythia.readString("PromptPhoton:all = on");	// this one is a hard process, should not mix with softqcd
+	}
 
 	pythia.readString("PartonLevel:ISR = on");
 	pythia.readString("PartonLevel:MPI = on");
@@ -273,7 +286,6 @@ int main(int argc, char* argv[]) {
 	pythia.readString("ParticleDecays:limitTau0=on");
 	pythia.readString("ParticleDecays:tau0Max = 10");
 
-	pythia.readString("PromptPhoton:all = on");
 
 
 	// Less screen print out
@@ -289,10 +301,11 @@ int main(int argc, char* argv[]) {
 	pythia.init();
 
 	// Create file on which histogram(s) can be saved && dat files
-	//TFile* outFile = new TFile("hist.root", "RECREATE");
+	//sprintf(StringName,"hist_pTHat%03d_to%03d.root",pTHat_Min,pTHat_Max);
+	//TFile* outFile = new TFile(StringName, "RECREATE");
 	ofstream fParton;
 	if(JobId==-1) {
-		sprintf(StringName,"../JETSCAPE/pythiaInput/parton_pTHat%03d_to%03d.dat",pTHat_Min,pTHat_Max);
+		sprintf(StringName,"parton_pTHat%03d_to%03d.dat",pTHat_Min,pTHat_Max);
 	}
 	else 	{
 		sprintf(StringName,"../JETSCAPE/pythiaInput/parton_pTHat%03d_to%03d_Job%d.dat",pTHat_Min,pTHat_Max,JobId);
@@ -305,10 +318,15 @@ int main(int argc, char* argv[]) {
 	TH1F *mult = new TH1F("mult","charged multiplicity", 100, -0.5, 799.5);
 	TH1D *hTime = new TH1D("hTime","Formation Time of Final Particles (fm)",1000,-100,100);
 	TH2D *hTimeVspT = new TH2D("hTimeVspT","Formation Time of Final Particles (fm) vs pT (GeV)",100,0,50,200,0,200);
+	TProfile *pTimeVspT = new TProfile("pTimeVspT","Formation Time of Final Particles (fm) vs pT (GeV)",100,0,100);
+	TProfile *pHardTimeVspT = new TProfile("pHardTimeVspT","Formation Time of Final Particles (fm) from Hardest Subprocess vs pT (GeV)",100,0,100);
+	TH2D *hHardTimeVsJetPt = new TH2D("hHardTimeVsJetPt","Formation Time of Final Particles from Hardest Subprocess vs its Ancestor's pT",100,0,100,100,0,100);
+	TProfile *pHardTimeVsJetPt = new TProfile("pHardTimeVsJetPt","Formation Time of Final Particles from Hardest Subprocess vs its Ancestor's pT",100,0,100);
 
 	// Begin event loop. Generate event; skip if generation aborted.
 	for (int iEvent = 0; iEvent < Nevents; ++iEvent) {
 		if (!pythia.next()) continue;
+		if ( pTHat_Min<MINIMALPT && pythia.info.pTHat()>pTHat_Max) continue;	// if softQcd, need to cut off at pTHat_Max
 
 
 		if(iEvent%1000==0) cout<<"event "<<iEvent<<endl;
@@ -426,6 +444,19 @@ int main(int argc, char* argv[]) {
 						// Fill histogram
 						hTime->Fill(ipf->totalTime*0.1973);
 						hTimeVspT->Fill(pythia.event[k].pT(), ipf->totalTime*0.1973);
+						pTimeVspT->Fill(pythia.event[k].pT(), ipf->totalTime*0.1973);
+                                                // outgoing particles of the hardest subprocess have index == 5 or 6 & status == -23
+                                                if(pythia.event[5].status()==-23 && pythia.event[k].isAncestor(5)) {
+							pHardTimeVspT->Fill(pythia.event[k].pT(), ipf->totalTime*0.1973);
+                                                        hHardTimeVsJetPt->Fill(pythia.event[5].pT(), ipf->totalTime*0.1973);
+                                                        pHardTimeVsJetPt->Fill(pythia.event[5].pT(), ipf->totalTime*0.1973);
+                                                }
+                                                if(pythia.event[6].status()==-23 && pythia.event[k].isAncestor(6)) {
+							pHardTimeVspT->Fill(pythia.event[k].pT(), ipf->totalTime*0.1973);
+                                                        hHardTimeVsJetPt->Fill(pythia.event[6].pT(), ipf->totalTime*0.1973);
+                                                        pHardTimeVsJetPt->Fill(pythia.event[6].pT(), ipf->totalTime*0.1973);
+                                                }
+
 						// Write dat file
 						fParton<< k+1 <<"\t"<<pythia.event[k].id()<<"\t"<<pythia.event[k].px()<<"\t"<<pythia.event[k].py()<<"\t"<<pythia.event[k].pz()<<"\t"<<pythia.event[k].e()<<"\t"<<pythia.event[k].m()<<"\t"<<"0"<<"\t"<<"0"<<"\t"<<"0"<<"\t"<<ipf->totalTime*0.1973<<endl;		// convert into fm (was 1/GeV)
 
@@ -442,9 +473,7 @@ int main(int argc, char* argv[]) {
 
 	}	// end for loop events
 
-	// Statistics on event generation.
-	//pythia.stat();
-	
+
 	// Show histogram. Possibility to close it.
 	//mult->Draw();
 	//hTime->Draw();
@@ -455,10 +484,27 @@ int main(int argc, char* argv[]) {
 	//mult->Write();
 	//hTime->Write();
 	//hTimeVspT->Write();
+	//pTimeVspT->Write();
+	//pHardTimeVspT->Write();
+        //hHardTimeVsJetPt->Write();
+        //pHardTimeVsJetPt->Write();
 	//delete outFile;
 	
 	fParton.close();
 
+	// Statistics on event generation.
+	//pythia.stat();
+	ofstream fXsec;
+	if(JobId==-1) {
+		sprintf(StringName,"Xsec_pTHat%03d_to%03d.dat",pTHat_Min,pTHat_Max);
+	}
+	else {
+		sprintf(StringName,"../JETSCAPE/pythiaInput/Xsec_pTHat%03d_to%03d.dat",pTHat_Min,pTHat_Max);
+	}
+	fXsec.open(StringName,std::ofstream::out | std::ofstream::app);
+	fXsec << pythia.info.nAccepted() << '\t' << pythia.info.sigmaGen() << '\t' << pythia.info.sigmaErr() << '\t' << JobId << endl;
+	fXsec.close();
+	
 	// Done.
 	cout<<"====== Done ======"<<endl;
 	return 0;
