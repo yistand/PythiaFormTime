@@ -301,14 +301,20 @@ int main(int argc, char* argv[]) {
 	pythia.init();
 
 	// Create file on which histogram(s) can be saved && dat files
-	//sprintf(StringName,"hist_pTHat%03d_to%03d.root",pTHat_Min,pTHat_Max);
-	//TFile* outFile = new TFile(StringName, "RECREATE");
+	const char *dir = "../JETSCAPE/pythiaInput/";
+	if(JobId==-1) {
+		sprintf(StringName,"hist_pTHat%03d_to%03d.root",pTHat_Min,pTHat_Max);
+	}
+	else 	{
+		sprintf(StringName,"%shist_pTHat%03d_to%03d_Job%d.root",dir,pTHat_Min,pTHat_Max,JobId);
+	}
+	TFile* outFile = new TFile(StringName, "RECREATE");
 	ofstream fParton;
 	if(JobId==-1) {
 		sprintf(StringName,"parton_pTHat%03d_to%03d.dat",pTHat_Min,pTHat_Max);
 	}
 	else 	{
-		sprintf(StringName,"../JETSCAPE/pythiaInput/parton_pTHat%03d_to%03d_Job%d.dat",pTHat_Min,pTHat_Max,JobId);
+		sprintf(StringName,"%sparton_pTHat%03d_to%03d_Job%d.dat",dir,pTHat_Min,pTHat_Max,JobId);
 	}
 	fParton.open(StringName,ios::out);
 	cout<<"Output: "<<StringName<<endl;
@@ -481,14 +487,14 @@ int main(int argc, char* argv[]) {
 	//gPad->WaitPrimitive();
 
 	// Save histogram on file and close file.
-	//mult->Write();
-	//hTime->Write();
-	//hTimeVspT->Write();
-	//pTimeVspT->Write();
-	//pHardTimeVspT->Write();
-        //hHardTimeVsJetPt->Write();
-        //pHardTimeVsJetPt->Write();
-	//delete outFile;
+	mult->Write();
+	hTime->Write();
+	hTimeVspT->Write();
+	pTimeVspT->Write();
+	pHardTimeVspT->Write();
+        hHardTimeVsJetPt->Write();
+        pHardTimeVsJetPt->Write();
+	delete outFile;
 	
 	fParton.close();
 
