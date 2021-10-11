@@ -1,0 +1,18 @@
+universe = vanilla
+executable = run.sh
+output = out/run.out.$(Cluster).$(Process)
+error = err/run.error.$(Cluster).$(Process)
+
+no = $(Cluster)$(Process)
+if defined id
+ no = $(id)
+endif
+
+
+if ! defined ptmin
+ arguments = 1000 5 50 $(no) 1
+elif defined ptmax
+  arguments = 1000 $(ptmin) $(ptmax) $(no) 1
+ endif
+
+queue 1
