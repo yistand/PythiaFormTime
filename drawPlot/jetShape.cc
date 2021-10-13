@@ -421,18 +421,20 @@ int main(int argc, char* argv[]) {		//  outputFile .root file
 
 	}
 	
-	TH1D *hSums = new TH1D("hSums","hSums",5,0,5);
-	hSums->GetXaxis()->SetBinLabel(1,"N_{jets}");
-	hSums->GetXaxis()->SetBinLabel(2,"#Sigma_{jets}#Sigma_{trk}p_{T}^{trk}");
-	hSums->GetXaxis()->SetBinLabel(3,"#Sigma_{jets}#Sigma_{trk}p_{T}^{jet trk}");
-	hSums->GetXaxis()->SetBinLabel(4,Form("#Sigma_{jets}#Sigma_{trk#in[0,R=%.1f]}p_{T}^{trk}",R));
-	hSums->GetXaxis()->SetBinLabel(5,"#Sigma_{jets}p_{T}^{jet}");
+	TH1D *hSums = new TH1D("hSums","hSums",6,0,6);
+	hSums->GetXaxis()->SetBinLabel(1,"N_{evt}");
+	hSums->GetXaxis()->SetBinLabel(2,"N_{jets}");
+	hSums->GetXaxis()->SetBinLabel(3,"#Sigma_{jets}#Sigma_{trk}p_{T}^{trk}");
+	hSums->GetXaxis()->SetBinLabel(4,"#Sigma_{jets}#Sigma_{trk}p_{T}^{jet trk}");
+	hSums->GetXaxis()->SetBinLabel(5,Form("#Sigma_{jets}#Sigma_{trk#in[0,R=%.1f]}p_{T}^{trk}",R));
+	hSums->GetXaxis()->SetBinLabel(6,"#Sigma_{jets}p_{T}^{jet}");
 
-	hSums->SetBinContent(1,JetsSum);
-	hSums->SetBinContent(2,PtSum);
-	hSums->SetBinContent(3,PtJetConSum);
-	hSums->SetBinContent(4,PtInConeSum);
-	hSums->SetBinContent(5,PtJetSum);
+	hSums->SetBinContent(1,nEvent);
+	hSums->SetBinContent(2,JetsSum);
+	hSums->SetBinContent(3,PtSum);
+	hSums->SetBinContent(4,PtJetConSum);
+	hSums->SetBinContent(5,PtInConeSum);
+	hSums->SetBinContent(6,PtJetSum);
 
 	// Scale histogram for quick single file check
 	// hrho & hYield for single root file only, will become meanless after merging files with hadd
