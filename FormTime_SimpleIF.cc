@@ -192,7 +192,8 @@ int main(int argc, char* argv[]) {
 	TProfile *pTimeVsJetPt = new TProfile("pTimeVsJetPt","Formation Time of Final Particles from Hardest Subprocess vs its Ancestor's pT",100,0,100);
 
 	// Begin event loop. Generate event; skip if generation aborted.
-	for (int iEvent = 0; iEvent < Nevents; ++iEvent) {
+	//for (int iEvent = 0; iEvent < Nevents; ++iEvent) {
+	for (int iEvent = 0; iEvent < Nevents; ) {
 		if (!pythia.next()) continue;
 		if ( pTHat_Min<MINIMALPT && pythia.info.pTHat()>pTHat_Max) continue;	// if softQcd, need to cut off at pTHat_Max
 
@@ -255,7 +256,7 @@ int main(int argc, char* argv[]) {
 		}	// End of pythia particle loop
 
 		// =============== End of Section for Formation Time Calculation ===========
-
+		++iEvent;
 
 	}	// end for loop events
 
