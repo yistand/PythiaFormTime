@@ -246,11 +246,14 @@ int main(int argc, char* argv[]) {		//  outputFile .root file
 		}
 		//        parton2 >> iEvent2 >> np2;
 		//        np2=0;
-		//        if(parton1.eof()||parton2.eof()) break;
 		if(parton1.eof()) break;
-		//        if(iEvent1!=iEvent2) {
-		//           cout << "Event ID's don't match between positive and negative ..." << endl;
-		//        }
+		if (argc == 4) {
+			if( parton2.eof() ) break;
+		        if(iEvent1!=iEvent2) {
+		           cout << "ERROR!!!! Event ID's don't match between positive and negative ... in jetShape code" << endl;
+			   break;
+		        }
+		}
 		nEvent += 1; 
 		//        cout << iEvent1 << "  " << iEvent2 << "  " << np1 << "  " << np2 << "  " << dummyF << endl;
 
