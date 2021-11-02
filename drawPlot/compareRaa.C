@@ -128,19 +128,21 @@ void compareRaa() {
 
 	enum Type {kPythia, kLBT, kLBTNoFT, kPythia4S, kLBTSimple, kTotal};
 	const char *name[kTotal] = {"Pythia","LBT","LBTNoFT","Pythia4S","LBTSimple"};
+	const char *tag[kTotal] = {"Pythia-jet", "LBT-jet", "LBT-jet", "Pythia-jet", "LBT-jet"};
+	const char *LegendName[kTotal] = {"Pythia","LBT w/ f.t.","LBT default","Pythia4S","LBT w/ simple f.t."};
 
 	// input 
-	ifstream input[kTotal]; //pythia, LBT, LBT-simpleFT, LBTNoFT;
-
 	const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE/results/", "../JETSCAPE-noFT/results/", "../JETSCAPE/results-SimpleIF/", "../JETSCAPE/results-SimpleIF/"};
+
+	ifstream input[kTotal]; //pythia, LBT, LBT-simpleFT, LBTNoFT;
 
 	const int Npt = 14+1;		// +1 for the sum
 	int arrayMin[Npt]= {0 , 2 , 4 , 6  , 8 , 10 , 15 , 20 , 25 , 30 , 35 , 40 , 50 , 60, 0};		// last bin is sum
 	int arrayMax[Npt]={2 , 4 , 6 , 8 , 10 , 15 , 20 , 25 , 30 , 35 , 40 , 50 , 60  ,100, 100};		// last bin is sum
 	TH1D *hist[kTotal][Npt];	
 
-	double Xsec[Npt-1] = {28.4852,9.61573,0.47458,0.0632963,0.0135362,0.00525799,0.00046218,6.42463e-05,1.1666e-05,2.39516e-06,5.34032e-07,1.4737e-07,7.64804e-09,3.3109e-10};
-	double Xsec4S[Npt-1] = {28.4852,9.61573,0.47458,0.0632963,0.0135362,0.00525799,0.00046218,6.42463e-05,1.1666e-05,2.39516e-06,5.34032e-07,1.4737e-07,7.64804e-09,3.3109e-10};
+	double Xsec[Npt-1] = {28.4852,9.61467,0.472347,0.0635027,0.0134543,0.00527283,0.000456384,6.42e-05,1.16125e-05,2.39501e-06,5.32087e-07,1.49413e-07,7.60858e-09,3.33557e-10};
+	double Xsec4S[Npt-1] = {28.4852,9.61467,0.472347,0.0635027,0.0134543,0.00527283,0.000456384,6.42e-05,1.16125e-05,2.39501e-06,5.32087e-07,1.49413e-07,7.60858e-09,3.33557e-10};
 
 	double tmpsec[Npt-1] = {0};
 	if(ReadXsec("../JETSCAPE/pythiaInput/",Npt-1,arrayMin,arrayMax,tmpsec)) {	// read xsec file if exists
@@ -161,7 +163,6 @@ void compareRaa() {
 		cout<<endl;
 	}
 
-	const char *tag[kTotal] = {"Pythia-jet", "LBT-jet", "LBT-jet", "Pythia-jet", "LBT-jet"};
 
 
 	int Nbins = 100;
@@ -201,9 +202,9 @@ void compareRaa() {
 	for(int t = 0; t<kTotal; t++) {
 		for(int i = 0; i<Npt-1; i++) {
 			hist[t][Npt-1]->Add(hist[t][i]);	// the sum of all pt bins
+			//cout<<"Add "<<hist[t][i]->GetName()<<" to "<<hist[t][Npt-1]<<endl;
 		}
 	}
-
 
 
 	// Raa
@@ -263,11 +264,14 @@ void compareRaa() {
 
 
 	TLegend *l = new TLegend(0.65,0.7,0.9,0.9);
-	l->AddEntry(hist[kPythia][Npt-1],"Pythia","pl");
-	l->AddEntry(hist[kPythia4S][Npt-1],"Pythia4S","pl");
-	l->AddEntry(hist[kLBT][Npt-1],"LBT w/ f.t.","pl");
-	l->AddEntry(hist[kLBTSimple][Npt-1],"LBT w/ simple f.t.","pl");
-	l->AddEntry(hist[kLBTNoFT][Npt-1],"LBT no f.t.","pl");
+	for(int t = 0; t<kTotal ; t++) {
+		l->AddEntry(hist[t][Npt-1],LegendName[t],"pl");
+	}
+	//l->AddEntry(hist[kPythia][Npt-1],"Pythia","pl");
+	//l->AddEntry(hist[kPythia4S][Npt-1],"Pythia4S","pl");
+	//l->AddEntry(hist[kLBT][Npt-1],"LBT w/ f.t.","pl");
+	//l->AddEntry(hist[kLBTSimple][Npt-1],"LBT w/ simple f.t.","pl");
+	//l->AddEntry(hist[kLBTNoFT][Npt-1],"LBT default","pl");
 	l->Draw();
 
 
@@ -303,9 +307,9 @@ void compareRaa() {
 	hRaaSimpleFT->Draw("same");
 
 	TLegend *l2 = new TLegend(0.65,0.7,0.898,0.898);
-	l2->AddEntry(hRaa,"LBT w/ f.t.","pl");
-	l2->AddEntry(hRaaSimpleFT,"LBT w/ simple f.t.","pl");
-	l2->AddEntry(hRaaNoFT,"LBT no f.t.","pl");
+	l2->AddEntry(hRaa,LegendName[kLBT],"pl");//"LBT w/ f.t.","pl");
+	l2->AddEntry(hRaaSimpleFT,LegendName[kLBTSimple],"pl");//"LBT w/ simple f.t.","pl");
+	l2->AddEntry(hRaaNoFT,LegendName[kLBTNoFT],"pl");//"LBT no f.t.","pl");
 	l2->Draw();
 
 	TLine *line = new TLine(0,1,100,1);
@@ -314,7 +318,7 @@ void compareRaa() {
 #endif
 
 #ifdef SAVEROOT
-		TFile *fout = new TFile("out.root","RECREATE");
+		TFile *fout = new TFile("FTvsSimplevsNo.root","RECREATE");
 		for(int i = 0; i<kTotal; i++) for(int j = 0; j<Npt; j++) hist[i][j]->Write();
 		hRaa->Write(); 
 		hRaaSimpleFT->Write(); 
