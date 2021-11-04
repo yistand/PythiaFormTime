@@ -38,7 +38,7 @@ bool ReadJet(char *filename, TH1D *h, double &Nevent) {
 	if(verbose) cout<<"Read "<<filename<<endl;
 	string line;
 	Nevent = 0;
-	while (getline(in, line)){
+	while (in.good() && getline(in, line)){
 		stringstream ss(line);
 		string tmp;
 		vector<double> v;
