@@ -331,7 +331,8 @@ int main(int argc, char* argv[]) {
 
 	// Begin event loop. Generate event; skip if generation aborted.
 	//for (int iEvent = 0; iEvent < Nevents; ++iEvent) {
-	for (int iEvent = 0; iEvent < Nevents; ) {
+	int iEvent = 0;
+	for (  ; iEvent < Nevents;   ) {
 		if (!pythia.next()) continue;
 		if ( pTHat_Min<MINIMALPT && pythia.info.pTHat()>pTHat_Max) continue;	// if softQcd, need to cut off at pTHat_Max
 
@@ -511,7 +512,8 @@ int main(int argc, char* argv[]) {
 		sprintf(StringName,"../JETSCAPE/pythiaInput/Xsec_pTHat%03d_to%03d.dat",pTHat_Min,pTHat_Max);
 	}
 	fXsec.open(StringName,std::ofstream::out | std::ofstream::app);
-	fXsec << pythia.info.nAccepted() << '\t' << pythia.info.sigmaGen() << '\t' << pythia.info.sigmaErr() << '\t' << JobId << endl;
+	//fXsec << pythia.info.nAccepted() << '\t' << pythia.info.sigmaGen() << '\t' << pythia.info.sigmaErr() << '\t' << JobId << endl;
+	fXsec << iEvent << '\t' << pythia.info.sigmaGen() << '\t' << pythia.info.sigmaErr() << '\t' << JobId << endl;
 	fXsec.close();
 	
 	// Done.
