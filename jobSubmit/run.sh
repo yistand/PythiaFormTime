@@ -21,7 +21,7 @@ nlbt=$5
 #echo ./FormTime $npythia $min $max $id 
 #./FormTime $npythia $min $max $id 
 #
-#echo
+#echo $PWD
 #
 #
 #
@@ -31,16 +31,38 @@ nlbt=$5
 #echo
 #echo ./run-patch $nlbt $min $max $id
 #./run-patch $nlbt $min $max $id
+#
 #echo
+
+#cd ../JETSCAPE-6080
+#echo $PWD
 #
+#echo
+#echo ./run-patch $nlbt $min $max $id
+#./run-patch $nlbt $min $max $id
 #
+#echo
+
+
+
 #cd ../JETSCAPE-noFT
 #echo $PWD
 #
 #echo
 #echo ./run-patch $nlbt $min $max $id
 #./run-patch $nlbt $min $max $id
+#
 #echo
+
+
+cd ../JETSCAPE-noFT-6080
+echo $PWD
+
+echo
+echo ./run-patch $nlbt $min $max $id
+./run-patch $nlbt $min $max $id
+
+echo
 
 
 ## The second way to caculate Formation time
@@ -52,17 +74,27 @@ nlbt=$5
 #echo ./FormTime_SimpleIF $npythia $min $max $id 
 #./FormTime_SimpleIF $npythia $min $max $id 
 #
+#echo 
+#
+#
+#cd ../JETSCAPE
+#echo $PWD
+#
 #echo
+#echo ./run-patch-SimpleIF $nlbt $min $max $id
+#./run-patch-SimpleIF $nlbt $min $max $id
+#
+#echo 
 #
 #
-cd ../JETSCAPE
-echo $PWD
-
-echo
-echo ./run-patch-SimpleIF $nlbt $min $max $id
-./run-patch-SimpleIF $nlbt $min $max $id
-echo
-
+#cd ../JETSCAPE-6080
+#echo $PWD
+#
+#echo
+#echo ./run-patch-SimpleIF $nlbt $min $max $id
+#./run-patch-SimpleIF $nlbt $min $max $id
+#
+#echo
 
 
 
