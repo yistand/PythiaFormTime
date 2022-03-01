@@ -1,7 +1,13 @@
 // ================================================================================
 //
 //		2021.08.24 Li YI
-//		caculate and plot Raa for JETSCAPE & JETSCAPE-noFT
+//		caculate and plot Raa for different alpha 
+//
+//		to run:
+//		root -l
+//		.L compareRaa_alphaS.C+
+//		compareRaa()
+//		.q
 //
 // ================================================================================
 #include <sstream>	// stringstream
@@ -21,6 +27,7 @@
 
 
 #define DRAW		// if define draw plots
+#define PDF		// if define as draw plots as pdf
 #define SAVEROOT	// if define save root file
 
 using std::cout; using std::cin;
@@ -38,7 +45,7 @@ bool ReadJet(char *filename, TH1D *h, double &Nevent) {
 	if(verbose) cout<<"Read "<<filename<<endl;
 	string line;
 	Nevent = 0;
-	while (getline(in, line)){
+	while (!in.eof() && getline(in, line)){
 		stringstream ss(line);
 		string tmp;
 		vector<double> v;
@@ -51,7 +58,7 @@ bool ReadJet(char *filename, TH1D *h, double &Nevent) {
 				v.push_back(stod(s)); 
 				if(verbose == 10) cout<<stod(s)<<endl;
 				} catch (std::invalid_argument const& ex) {
-					cout<<s<<" in FILE "<<filename<<" at LINE "<<line<<endl;
+					cout<<s<<" in FILE "<<filename<<" at LINE "<<line<<" after reading "<<Nevent<<" events"<<endl;
 				        std::cout << "ERROR!!!!!!! " << ex.what() << '\n';
 			}
 		}
@@ -134,13 +141,17 @@ bool ReadXsec(const char *dir, const int Npt, const int *ptmin, const int *ptmax
 // ------------------ Main ---------------------
 void compareRaa() {
 
-	enum Type {kPythia, kLBT015, kLBT030, kLBT050, kTotal};
-	const char *name[kTotal] = {"Pythia","alphaS015","alphaS030","alphaS050"};
-	const char *tag[kTotal] = {"Pythia-jet", "LBT-jet", "LBT-jet", "LBT-jet"};
-	const char *LegendName[kTotal] = {"Pythia","#alpha_{s}=0.15","#alpha_{s}=0.3","#alpha_{s}=0.5"};
+	
+	enum Type {kPythia, kLBT000, kLBT015, kLBT030, kLBT050, kTotal};
+	const char *name[kTotal] = {"Pythia","alphaS000","alphaS015","alphaS030","alphaS050"};
+	const char *tag[kTotal] = {"Pythia-jet-g.dat", "LBT-jet-g.dat", "LBT-jet-g.dat", "LBT-jet-g.dat", "LBT-jet-g.dat"};
+	const char *LegendName[kTotal] = {"Pythia","#alpha_{s} = 0.00001", "#alpha_{s}=0.15","#alpha_{s}=0.3","#alpha_{s}=0.5"};
 
 	// input 
-	const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE/results/","../JETSCAPE/results-alphaS030/", "../JETSCAPE/results-alphaS050/"};
+	//const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE/results-alphaS000/","../JETSCAPE/results/","../JETSCAPE/results-alphaS030/", "../JETSCAPE/results-alphaS050/"};
+	//const char * dir[kTotal] = {"../JETSCAPE/results-SimpleIF/","../JETSCAPE/results-SimpleIF-alphaS000/","../JETSCAPE/results-SimpleIF/","../JETSCAPE/results-SimpleIF-alphaS030/","../JETSCAPE/results-SimpleIF-alphaS050/"};	// Simple
+	const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE-noFT/results-alphaS000/","../JETSCAPE-noFT/results/","../JETSCAPE-noFT/results-alphaS030/", "../JETSCAPE-noFT/results-alphaS050/"};
+	
 
 	ifstream input[kTotal]; 
 
@@ -217,7 +228,7 @@ void compareRaa() {
 
 	// Drawing
 #ifdef DRAW
-	unsigned int color[kTotal] = {kMagenta+4, kBlue+4, kOrange+10, kPink+7};
+	unsigned int color[5] = {kMagenta+4, kBlue+4, kOrange+10, kPink+7, kGreen+4};
 	for(int t = 0; t<kTotal; t++) {
 		for(int i = 0; i<Npt; i++) {
 			hist[t][i]->SetLineColor(color[t]-i);
@@ -296,11 +307,32 @@ void compareRaa() {
 	line->Draw("same");
 #endif
 #ifdef SAVEROOT
-	TFile *fout = new TFile("alphaS.root","RECREATE");
+	//TFile *fout = new TFile("Raa_SimpleIF_alphaS.root","RECREATE");
+	//TFile *fout = new TFile("Raa_alphaS.root","RECREATE");
+	TFile *fout = new TFile("Raa_NoFT_alphaS.root","RECREATE");
 	for(int i = 0; i<kTotal; i++) for(int j = 0; j<Npt; j++) hist[i][j]->Write();
 	for(int t = 0; t<kTotal-1 ; t++)  hRaa[t]->Write();
 #ifdef DRAW
 	for(int i = 0; i<kTotal+2; i++) c[i]->Write();
+
+#ifdef PDF
+	Int_t ci = TColor::GetFreeColorIndex();
+	TColor *mycolor0 = new TColor(ci,0.46,0.37,0.73);
+	TColor *mycolor1 = new TColor(ci+1,0.9,0.78,0.96);
+	TColor *mycolor2 = new TColor(ci+2,0.35,0.77,0.66);
+	TColor *mycolor3 = new TColor(ci+3,0.82,0.97,0.8);
+
+	for(int t = 0; t<kTotal-1 ; t++)  {
+		hRaa[t]->SetLineColor(ci+t);
+		hRaa[t]->SetMarkerColor(ci+t);
+	}
+	c[kTotal+1]->Update();
+	//c[kTotal+1]->SaveAs("Raa_SimpleIF_alphaS.pdf");
+	//c[kTotal+1]->SaveAs("Raa_alphaS.pdf");
+	c[kTotal+1]->SaveAs("Raa_NoFT_alphaS.pdf");
+
+#endif
+
 #endif
 	fout->Close();
 #endif
