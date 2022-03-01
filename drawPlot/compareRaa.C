@@ -38,7 +38,7 @@ bool ReadJet(char *filename, TH1D *h, double &Nevent) {
 	if(verbose) cout<<"Read "<<filename<<endl;
 	string line;
 	Nevent = 0;
-	while (in.good() && getline(in, line)){
+	while (!in.eof() && getline(in, line)){
 		stringstream ss(line);
 		string tmp;
 		vector<double> v;
@@ -128,7 +128,7 @@ void compareRaa() {
 
 	enum Type {kPythia, kLBT, kLBTNoFT, kPythia4S, kLBTSimple, kTotal};
 	const char *name[kTotal] = {"Pythia","LBT","LBTNoFT","Pythia4S","LBTSimple"};
-	const char *tag[kTotal] = {"Pythia-jet", "LBT-jet", "LBT-jet", "Pythia-jet", "LBT-jet"};
+	const char *tag[kTotal] = {"Pythia-jet-g.dat", "LBT-jet-g.dat", "LBT-jet-g.dat", "Pythia-jet-g.dat", "LBT-jet-g.dat"};
 	const char *LegendName[kTotal] = {"Pythia","LBT w/ f.t.","LBT default","Pythia4S","LBT w/ simple f.t."};
 
 	// input 
@@ -318,7 +318,7 @@ void compareRaa() {
 #endif
 
 #ifdef SAVEROOT
-		TFile *fout = new TFile("FTvsSimplevsNo.root","RECREATE");
+		TFile *fout = new TFile("Raa_FTvsSimplevsNo.root","RECREATE");
 		for(int i = 0; i<kTotal; i++) for(int j = 0; j<Npt; j++) hist[i][j]->Write();
 		hRaa->Write(); 
 		hRaaSimpleFT->Write(); 
