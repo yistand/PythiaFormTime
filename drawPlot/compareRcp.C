@@ -1,5 +1,10 @@
 // ================================================================================
 //
+// 		2022.03.01 Li YI
+// 		Add Rmode to select different R
+//
+// ================================================================================
+//
 //		2021.08.24 Li YI
 //		caculate and plot Rcp for JETSCAPE & JETSCAPE-noFT
 //
@@ -23,6 +28,7 @@
 #include "TFile.h"
 #include "TLine.h"
 #include "TFrame.h"
+#include "TGraphAsymmErrors.h"
 
 
 #define DRAW		// if define draw plots
@@ -129,12 +135,35 @@ bool ReadXsec(const char *dir, const int Npt, const int *ptmin, const int *ptmax
 }
 
 // ------------------ Main ---------------------
-void compareRcp() {
+void compareRcp(int Rmode = 0,int drawData = 0) { // Rmode = 0:R=0.2	; = 1: R=0.3	; = 2: R=0.4
+	if(Rmode>2||Rmode<0) {
+		cout<<"ERROR: WRONG input Rmode. Rmode = 0:R=0.2     ; = 1: R=0.3    ; = 2: R=0.4"<<endl;
+		return;
+	}
 
 	enum Type {kPeri, kLBT, kPeriNoFT, kLBTNoFT, kPeri4S, kLBTSimple, kTotal};
 	const char *name[kTotal] = {"Peri","LBT","PeriNoFT","LBTNoFT","Peri4S","LBTSimple"};
-	const char *tag[kTotal] = {"LBT-jet", "LBT-jet", "LBT-jet", "LBT-jet", "LBT-jet", "LBT-jet"};
+	const char *tag[kTotal] = {"LBT-jet-g%s.dat", "LBT-jet-g%s.dat", "LBT-jet-g%s.dat", "LBT-jet-g%s.dat", "LBT-jet-g%s.dat", "LBT-jet-g%s.dat"};
 	const char *LegendName[kTotal] = {"peripheral","LBT w/ f.t.","peri default","LBT default","peripheral4S","LBT w/ simple f.t."};
+	// Experimental Data points
+	// https://www.hepdata.net/record/ins1798665
+	const int NR=3;
+	const char *Rtag[NR] = {"","-R03","-R04"};
+	const int Ndata = 8;
+	float dataX1[Ndata] = {6,7,8,10,12,14,16,20};
+	float dataX2[Ndata] = {7,8,10,12,14,16,20,25};
+	float dataX[Ndata] = {6.45,7.45,8.79,10.79,12.86,14.93,17.57,22.01};	
+	float dataRcp[NR][Ndata] = {{0.4262,0.415,0.394,0.358,0.37,0.324,0.383,0.439},
+		{0.3992,0.4008	,0.378	,0.349	,0.354	,0.359	,0.333	,0.43},
+		{0.3916,0.4087	,0.38	,0.358	,0.362	,0.358	,0.374	,0.423}};	
+	float dataElow[NR][Ndata] = {{0.05,0.08,0.10,0.07,0.04,0.06,0.06, 0.16},
+		{0.03 ,0.07	,0.10	,0.12	,0.10	,0.07	,0.07, 0.09},
+		{0.06,0.06	,0.08	,0.12	,0.14	,0.13	,0.12	,0.17}};	
+	float dataEhigh[NR][Ndata] = {{0.07,0.08,0.10,0.06,0.05,0.05,0.05,0.07},		
+		{0.04,0.04	,0.06	,0.06	,0.05	,0.05	,0.07	,0.10},		
+		{0.04,0.05	,0.05	,0.08	,0.07	,0.07	,0.08	,0.10}};
+	TGraphAsymmErrors *grData;
+	grData = new TGraphAsymmErrors(Ndata,dataX,dataRcp[Rmode],0,0,dataElow[Rmode],dataEhigh[Rmode]);
 
 	// input 
 	const char * dir[kTotal] = {"../JETSCAPE-6080/results/","../JETSCAPE/results/", "../JETSCAPE-noFT-6080/results/", "../JETSCAPE-noFT/results/", "../JETSCAPE-6080/results-SimpleIF/", "../JETSCAPE/results-SimpleIF/"};
@@ -188,7 +217,11 @@ void compareRcp() {
 			char ctmp[500] = "";
 			sprintf(ctmp,"pTHat%03d_to%03d",arrayMin[i],arrayMax[i]);
 			if(verbose) cout<<"Finding "<<ctmp<<endl;
-			ListDir(dir[t], tag[t], list[t], ctmp);
+			char ftag[100];
+			sprintf(ftag,tag[t],Rtag[Rmode]);
+			//cout<<ftag<<endl;
+			//ListDir(dir[t], tag[t], list[t], ctmp);
+			ListDir(dir[t], ftag, list[t], ctmp);
 
 			double Nevt = 0;	// total number of events for type t & pt i
 			for(auto it : list[t]) {	// for each files in list
@@ -306,15 +339,21 @@ void compareRcp() {
 	hRcp->GetYaxis()->SetLabelSize(0.06);
 	hRcp->GetYaxis()->SetTitleSize(0.06);
 
+	grData->SetMarkerColor(2);
+	grData->SetLineColor(2);
+	grData->SetMarkerStyle(29);
+	grData->SetMarkerSize(2);
 
 	hRcp->Draw();
 	hRcpNoFT->Draw("same");
 	hRcpSimpleFT->Draw("same");
+	if(drawData) grData->Draw("psame");
 
 	TLegend *l2 = new TLegend(0.65,0.7,0.898,0.898);
 	l2->AddEntry(hRcp,LegendName[kLBT],"pl");//"LBT w/ f.t.","pl");
 	l2->AddEntry(hRcpSimpleFT,LegendName[kLBTSimple],"pl");//"LBT w/ simple f.t.","pl");
 	l2->AddEntry(hRcpNoFT,LegendName[kLBTNoFT],"pl");//"LBT no f.t.","pl");
+	if(drawData) l2->AddEntry(grData,"STAR Data","p");
 	l2->Draw();
 
 	TLine *line = new TLine(0,1,100,1);
@@ -323,11 +362,12 @@ void compareRcp() {
 #endif
 
 #ifdef SAVEROOT
-		TFile *fout = new TFile("Rcp_FTvsSimplevsNo.root","RECREATE");
+		TFile *fout = new TFile(Form("Rcp_FTvsSimplevsNo%s.root",Rtag[Rmode]),"RECREATE");
 		for(int i = 0; i<kTotal; i++) for(int j = 0; j<Npt; j++) hist[i][j]->Write();
 		hRcp->Write(); 
 		hRcpSimpleFT->Write(); 
 		hRcpNoFT->Write();
+		grData->Write();
 #ifdef DRAW
 		for(int i = 0; i<kTotal+2; i++) c[i]->Write();
 #endif
