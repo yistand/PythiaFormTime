@@ -10,6 +10,13 @@
 //		.q
 //
 // ================================================================================
+//
+//		2022.08.05 Li YI
+//		change noFT (tau use final parton E & pT) to zeroFT (tau = medium f.t.)
+//		remove alphaS = 0 from figure
+//		change legend name: Setup 1 - zeroFT, Setup 2 - Simple, Setup 3 - LBT
+//
+// ================================================================================
 #include <sstream>	// stringstream
 #include <fstream>	// ifstream
 #include <iostream>	
@@ -142,16 +149,18 @@ bool ReadXsec(const char *dir, const int Npt, const int *ptmin, const int *ptmax
 void compareRaa() {
 
 	
-	enum Type {kPythia, kLBT000, kLBT015, kLBT030, kLBT050, kTotal};
-	const char *name[kTotal] = {"Pythia","alphaS000","alphaS015","alphaS030","alphaS050"};
-	const char *tag[kTotal] = {"Pythia-jet-g.dat", "LBT-jet-g.dat", "LBT-jet-g.dat", "LBT-jet-g.dat", "LBT-jet-g.dat"};
-	const char *LegendName[kTotal] = {"Pythia","#alpha_{s} = 0.00001", "#alpha_{s}=0.15","#alpha_{s}=0.3","#alpha_{s}=0.5"};
+	enum Type {kPythia, kLBT015, kLBT030, kLBT050, kTotal};
+	const char *name[kTotal] = {"Pythia","alphaS015","alphaS030","alphaS050"};
+	const char *tag[kTotal] = {"Pythia-jet-g.dat",  "LBT-jet-g.dat", "LBT-jet-g.dat", "LBT-jet-g.dat"};
+	const char *LegendName[kTotal] = {"Pythia","#alpha_{s}=0.15","#alpha_{s}=0.3","#alpha_{s}=0.5"};
 
 	// input 
-	//const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE/results-alphaS000/","../JETSCAPE/results/","../JETSCAPE/results-alphaS030/", "../JETSCAPE/results-alphaS050/"};
-	//const char * dir[kTotal] = {"../JETSCAPE/results-SimpleIF/","../JETSCAPE/results-SimpleIF-alphaS000/","../JETSCAPE/results-SimpleIF/","../JETSCAPE/results-SimpleIF-alphaS030/","../JETSCAPE/results-SimpleIF-alphaS050/"};	// Simple
-	const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE-noFT/results-alphaS000/","../JETSCAPE-noFT/results/","../JETSCAPE-noFT/results-alphaS030/", "../JETSCAPE-noFT/results-alphaS050/"};
+	//const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE/results/","../JETSCAPE/results-alphaS030/", "../JETSCAPE/results-alphaS050/"};
+	//const char * dir[kTotal] = {"../JETSCAPE/results-SimpleIF/","../JETSCAPE/results-SimpleIF/","../JETSCAPE/results-SimpleIF-alphaS030/","../JETSCAPE/results-SimpleIF-alphaS050/"};	// Simple
+	const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE-zeroFT/results-alphaS015/","../JETSCAPE-zeroFT/results-alphaS030/", "../JETSCAPE-zeroFT/results-alphaS050/"};
 	
+	const char legName[100] = "Setup 1, R=0.2";
+	const char tagName[100] = "zeroFT_";//"_";//"SimpleIF_";//"zeroFT_"; 
 
 	ifstream input[kTotal]; 
 
@@ -220,7 +229,7 @@ void compareRaa() {
 		hRaa[t-1]->SetTitle(Form("R_{AA} %s",name[t]));
 		hRaa[t-1]->Divide(hist[kPythia][Npt-1]);
 		hRaa[t-1]->GetYaxis()->SetTitle("R_{AA}");
-		hRaa[t-1]->GetXaxis()->SetTitle("jet_pT_sub");
+		hRaa[t-1]->GetXaxis()->SetTitle("Jet p_{T}");//jet_pT_sub");
 	}
 
 
@@ -300,6 +309,7 @@ void compareRaa() {
 	for(int t = 0; t<kTotal-1 ; t++) {
 		l2->AddEntry(hRaa[t],LegendName[t+1],"pl");
 	}
+	l2->SetHeader(legName);
 	l2->Draw();
 
 	TLine *line = new TLine(0,1,100,1);
@@ -309,7 +319,8 @@ void compareRaa() {
 #ifdef SAVEROOT
 	//TFile *fout = new TFile("Raa_SimpleIF_alphaS.root","RECREATE");
 	//TFile *fout = new TFile("Raa_alphaS.root","RECREATE");
-	TFile *fout = new TFile("Raa_NoFT_alphaS.root","RECREATE");
+	//TFile *fout = new TFile("Raa_zeroFT_alphaS.root","RECREATE");
+	TFile *fout = new TFile(Form("Raa_%salphaS.root",tagName),"RECREATE");
 	for(int i = 0; i<kTotal; i++) for(int j = 0; j<Npt; j++) hist[i][j]->Write();
 	for(int t = 0; t<kTotal-1 ; t++)  hRaa[t]->Write();
 #ifdef DRAW
@@ -329,7 +340,9 @@ void compareRaa() {
 	c[kTotal+1]->Update();
 	//c[kTotal+1]->SaveAs("Raa_SimpleIF_alphaS.pdf");
 	//c[kTotal+1]->SaveAs("Raa_alphaS.pdf");
-	c[kTotal+1]->SaveAs("Raa_NoFT_alphaS.pdf");
+	//c[kTotal+1]->SaveAs("Raa_zeroFT_alphaS.pdf");
+	c[kTotal+1]->SaveAs(Form("Raa_%salphaS.pdf",tagName));
+	c[kTotal+1]->SaveAs(Form("Raa_%salphaS.C",tagName));
 
 #endif
 
