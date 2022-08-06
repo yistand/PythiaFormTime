@@ -16,6 +16,14 @@
 //		.q
 //
 // ================================================================================
+////
+//		2022.08.05 Li YI
+//		change noFT (tau use final parton E & pT) to zeroFT (tau = medium f.t.)
+//		remove alphaS = 0 from figure
+//		change legend name: Setup 1 - zeroFT, Setup 2 - Simple, Setup 3 - LBT
+//
+// ================================================================================
+
 #include <sstream>	// stringstream
 #include <fstream>	// ifstream
 #include <iostream>	
@@ -148,22 +156,22 @@ bool ReadXsec(const char *dir, const int Npt, const int *ptmin, const int *ptmax
 // ------------------ Main ---------------------
 void compareRcp(int Rmode = 0, int LBTmode = 0, int drawData = 0) {
 	// Rmode = 0:R=0.2    ; = 1: R=0.3    ; = 2: R=0.4
-	// LBTmode = 0: LBT with FT;	1: LBT SimpleIF;	2: LBT noFT
+	// LBTmode = 0: LBT with FT;	1: LBT SimpleIF;	2: LBT zeroFT
 	if(LBTmode>2||Rmode>2||LBTmode<0||Rmode<0) { 
 		cout<<"ERROR: WRONG input arguments!!!"<<endl;
 		cout<<"Rmode = 0:R=0.2    ; = 1: R=0.3    ; = 2: R=0.4"<<endl;
-		cout<<"LBTmode = 0: LBT with FT;    1: LBT SimpleIF;        2: LBT noFT"<<endl;
+		cout<<"LBTmode = 0: LBT with FT;    1: LBT SimpleIF;        2: LBT zeroFT"<<endl;
 		return;
 	}
 	cout<<"Rmode = "<<Rmode<<" LBTmode = "<<LBTmode<<" drawData="<<drawData<<endl;
 
 	
-	enum Type {kPeri000,kPeri015,kPeri030,kPeri050, kLBT000, kLBT015, kLBT030, kLBT050, kTotal};
-	const char *name[kTotal] = {"Peri000","Peri015","Peri030","Peri050","alphaS000","alphaS015","alphaS030","alphaS050"};
+	enum Type {kPeri015,kPeri030,kPeri050, kLBT015, kLBT030, kLBT050, kTotal};
+	const char *name[kTotal] = {"Peri015","Peri030","Peri050","alphaS015","alphaS030","alphaS050"};
 	const char *tag = "LBT-jet-g%s.dat";
-	const char *LegendName[kTotal] = {"Peri #alpha_{s} = 0.00001", "Peri #alpha_{s}=0.15","Peri #alpha_{s}=0.3","Peri #alpha_{s}=0.5",
-		"Central #alpha_{s} = 0.00001", "Central #alpha_{s}=0.15","Central #alpha_{s}=0.3","Central #alpha_{s}=0.5"};
-	const char *RcpLegendName[kTotal-kLBT000] = {	"#alpha_{s} = 0.00001", "#alpha_{s}=0.15","#alpha_{s}=0.3","#alpha_{s}=0.5"};
+	const char *LegendName[kTotal] = { "Peri #alpha_{s}=0.15","Peri #alpha_{s}=0.3","Peri #alpha_{s}=0.5",
+		"Central #alpha_{s}=0.15","Central #alpha_{s}=0.3","Central #alpha_{s}=0.5"};
+	const char *RcpLegendName[kTotal-kLBT015] = {"#alpha_{s}=0.15","#alpha_{s}=0.3","#alpha_{s}=0.5"};
 	const int NR=3;
 	const char *Rtag[NR] = {"","-R03","-R04"};
 	const char *RLegName[NR] = {"R=0.2","R=0.3","R=0.4"};
@@ -189,20 +197,19 @@ void compareRcp(int Rmode = 0, int LBTmode = 0, int drawData = 0) {
 	// input 
 	//const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE/results-alphaS000/","../JETSCAPE/results/","../JETSCAPE/results-alphaS030/", "../JETSCAPE/results-alphaS050/"};
 	//const char * dir[kTotal] = {"../JETSCAPE/results-SimpleIF/","../JETSCAPE/results-SimpleIF-alphaS000/","../JETSCAPE/results-SimpleIF/","../JETSCAPE/results-SimpleIF-alphaS030/","../JETSCAPE/results-SimpleIF-alphaS050/"};	// Simple
-	//const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE-noFT/results-alphaS000/","../JETSCAPE-noFT/results/","../JETSCAPE-noFT/results-alphaS030/", "../JETSCAPE-noFT/results-alphaS050/"};
+	//const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE-zeroFT/results-alphaS000/","../JETSCAPE-zeroFT/results/","../JETSCAPE-zeroFT/results-alphaS030/", "../JETSCAPE-zeroFT/results-alphaS050/"};
 	
 	
-	const char *LBTLegName[3] = {"LBT w/ f.t","LBT w/ simple f.t.","LBT default"};
-	const char *tagLBTMode[3] = {"","-SimpleIF","-noFT"};
-	const char *tagAlphaS[kLBT000-kPeri000] = {"-alphaS000","","-alphaS030","-alphaS050"};
+	const char *LBTLegName[3] = {"Setup 3","Setup 2","Setup 1"};
+	const char *tagLBTMode[3] = {"","-SimpleIF","-zeroFT"};
+	const char *tagAlphaS[kLBT015-kPeri015] = {"","-alphaS030","-alphaS050"};
 	char dirPeri[500] = "../JETSCAPE-6080/results%s/";
 	char dirLBT[500] = "../JETSCAPE/results%s/";
         if(LBTmode==1) {	// SimpleIF
                 sprintf(dirPeri,"../JETSCAPE-6080/results%s%%s/",tagLBTMode[LBTmode]);
                 sprintf(dirLBT,"../JETSCAPE/results%s%%s/",tagLBTMode[LBTmode]);
         }
-        else if(LBTmode==2) {	// noFT
-		// #LY ---- to be continue;
+        else if(LBTmode==2) {	// zeroFT
                 sprintf(dirPeri,"../JETSCAPE%s-6080/results%%s/",tagLBTMode[LBTmode]);       
                 sprintf(dirLBT,"../JETSCAPE%s/results%%s/",tagLBTMode[LBTmode]);       
         }
@@ -247,11 +254,13 @@ void compareRcp(int Rmode = 0, int LBTmode = 0, int drawData = 0) {
 			sprintf(ctmp,"pTHat%03d_to%03d",arrayMin[i],arrayMax[i]);
 			if(verbose) cout<<"Finding "<<ctmp<<endl;
 			char dir[500];
-			if(t>=kPeri000&&t<=kPeri050) {
-				sprintf(dir, dirPeri,tagAlphaS[t-kPeri000]);
+			if(t>=kPeri015&&t<=kPeri050) {
+				if(LBTmode==2 && t==kPeri015)  sprintf(dir, dirPeri,"-alphaS015");
+				else sprintf(dir, dirPeri,tagAlphaS[t-kPeri015]);
 			}
 			else {
-				sprintf(dir, dirLBT,tagAlphaS[t-kLBT000]);
+				if(LBTmode==2 && t==kLBT015) sprintf(dir, dirLBT,"-alphaS015");
+				else sprintf(dir, dirLBT,tagAlphaS[t-kLBT015]);
 			}
 			char itag[100];
 			sprintf(itag,tag,Rtag[Rmode]);
@@ -281,9 +290,9 @@ void compareRcp(int Rmode = 0, int LBTmode = 0, int drawData = 0) {
 
 
 	// Raa
-	TH1D *hRaa[kTotal-kLBT000];
-	for(int t=0; t<kTotal-kLBT000; t++) {
-		hRaa[t] = (TH1D*)hist[t+kLBT000][Npt-1]->Clone(Form("hRcp%s",name[t]));
+	TH1D *hRaa[kTotal-kLBT015];
+	for(int t=0; t<kTotal-kLBT015; t++) {
+		hRaa[t] = (TH1D*)hist[t+kLBT015][Npt-1]->Clone(Form("hRcp%s",name[t]));
 		hRaa[t]->SetTitle(Form("R_{CP} %s",name[t]));
 		hRaa[t]->Divide(hist[t][Npt-1]);
 		hRaa[t]->GetYaxis()->SetTitle("R_{CP}");
@@ -325,7 +334,7 @@ void compareRcp(int Rmode = 0, int LBTmode = 0, int drawData = 0) {
 	// draw pt sum of each type together
 	c[kTotal]->cd();
 	c[kTotal]->SetLogy();
-	hist[kPeri000][Npt-1]->Draw("c");
+	hist[kPeri015][Npt-1]->Draw("c");
 	for(int t = 1; t<kTotal; t++) { 
 		hist[t][Npt-1]->Draw("csame");
 	}
@@ -343,10 +352,10 @@ void compareRcp(int Rmode = 0, int LBTmode = 0, int drawData = 0) {
 	c[kTotal+1]->SetLeftMargin(0.15);
 	c[kTotal+1]->SetBottomMargin(0.2);
 
-	for(int t = 0; t<kTotal-kLBT000 ; t++) {
-		hRaa[t]->SetLineColor(hist[t+kLBT000][Npt-1]->GetLineColor());
-		hRaa[t]->SetMarkerColor(hist[t+kLBT000][Npt-1]->GetMarkerColor());
-		hRaa[t]->SetMarkerStyle(hist[t+kLBT000][Npt-1]->GetMarkerStyle());
+	for(int t = 0; t<kTotal-kLBT015 ; t++) {
+		hRaa[t]->SetLineColor(hist[t+kLBT015][Npt-1]->GetLineColor());
+		hRaa[t]->SetMarkerColor(hist[t+kLBT015][Npt-1]->GetMarkerColor());
+		hRaa[t]->SetMarkerStyle(hist[t+kLBT015][Npt-1]->GetMarkerStyle());
 		hRaa[t]->SetMarkerSize(1.5);
 
 		hRaa[t]->GetXaxis()->SetNdivisions(505);
@@ -366,13 +375,13 @@ void compareRcp(int Rmode = 0, int LBTmode = 0, int drawData = 0) {
 
 
 	hRaa[0]->Draw();
-	for(int t = 1; t<kTotal-kLBT000; t++) {
+	for(int t = 1; t<kTotal-kLBT015; t++) {
 		hRaa[t]->Draw("same");
 	}
 	if(drawData) grData->Draw("psame");
 
 	TLegend *l2 = new TLegend(0.65,0.7,0.898,0.898);
-	for(int t = 0; t<kTotal-kLBT000 ; t++) {
+	for(int t = 0; t<kTotal-kLBT015 ; t++) {
 		l2->AddEntry(hRaa[t],RcpLegendName[t],"pl");
 	}
 	l2->SetHeader(Form("%s %s",LBTLegName[LBTmode],RLegName[Rmode]));
@@ -390,7 +399,7 @@ void compareRcp(int Rmode = 0, int LBTmode = 0, int drawData = 0) {
 	//TFile *fout = new TFile("Raa_NoFT_alphaS.root","RECREATE");
 	TFile *fout = new TFile(Form("Rcp%s%s_alphaS.root",tagLBTMode[LBTmode],Rtag[Rmode]),"RECREATE");
 	for(int i = 0; i<kTotal; i++) for(int j = 0; j<Npt; j++) hist[i][j]->Write();
-	for(int t = 0; t<kTotal-kLBT000 ; t++)  hRaa[t]->Write();
+	for(int t = 0; t<kTotal-kLBT015 ; t++)  hRaa[t]->Write();
 #ifdef DRAW
 	for(int i = 0; i<kTotal+2; i++) c[i]->Write();
 
@@ -401,7 +410,7 @@ void compareRcp(int Rmode = 0, int LBTmode = 0, int drawData = 0) {
 	TColor *mycolor2 = new TColor(ci+2,0.35,0.77,0.66);
 	TColor *mycolor3 = new TColor(ci+3,0.82,0.97,0.8);
 
-	for(int t = 0; t<kTotal-kLBT000; t++)  {
+	for(int t = 0; t<kTotal-kLBT015; t++)  {
 		hRaa[t]->SetLineColor(ci+t);
 		hRaa[t]->SetMarkerColor(ci+t);
 	}
@@ -409,7 +418,7 @@ void compareRcp(int Rmode = 0, int LBTmode = 0, int drawData = 0) {
 	//c[kTotal+1]->SaveAs("Raa_SimpleIF_alphaS.pdf");
 	//c[kTotal+1]->SaveAs("Raa_alphaS.pdf");
 	//c[kTotal+1]->SaveAs("Raa_NoFT_alphaS.pdf");
-	c[kTotal+1]->SaveAs(Form("Rcp%s%s_alphaS.root",tagLBTMode[LBTmode],Rtag[Rmode]));
+	c[kTotal+1]->SaveAs(Form("Rcp%s%s_alphaS.pdf",tagLBTMode[LBTmode],Rtag[Rmode]));
 
 #endif
 
