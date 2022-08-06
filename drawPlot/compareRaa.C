@@ -3,6 +3,10 @@
 //		2021.08.24 Li YI
 //		caculate and plot Raa for JETSCAPE & JETSCAPE-noFT
 //
+//		2022.08.05 Li YI
+//		Raa for LBT with single vs mulitple splittings vs zero f.t.
+//		add STAR data comparison
+//
 // ================================================================================
 #include <sstream>	// stringstream
 #include <fstream>	// ifstream
@@ -126,15 +130,28 @@ bool ReadXsec(const char *dir, const int Npt, const int *ptmin, const int *ptmax
 // ------------------ Main ---------------------
 void compareRaa() {
 
-	enum Type {kPythia, kLBT, kLBTNoFT, kPythia4S, kLBTSimple, kTotal};
-	const char *name[kTotal] = {"Pythia","LBT","LBTNoFT","Pythia4S","LBTSimple"};
+	enum Type {kPythia, kLBT, kLBTzeroFT, kPythia4S, kLBTSimple, kTotal};
+	const char *name[kTotal] = {"Pythia","LBT","LBTzeroFT","Pythia4S","LBTSimple"};
 	const char *tag[kTotal] = {"Pythia-jet-g.dat", "LBT-jet-g.dat", "LBT-jet-g.dat", "Pythia-jet-g.dat", "LBT-jet-g.dat"};
-	const char *LegendName[kTotal] = {"Pythia","LBT w/ f.t.","LBT default","Pythia4S","LBT w/ simple f.t."};
+	const char *LegendName[kTotal] = {"Pythia","Setup 3","Setup 1","Pythia4S","Setup 2"};		// zeroFT: Setup 1. simple single splitting: Setup 2. multiple splittings: Setup 3
+
+	// Experimental Data points
+	// https://www.hepdata.net/record/ins1798665
+	// Table 10. R = 0.2. start from 14 gev (unbias bins only)
+	const int Ndata = 4;
+	float dataX1[Ndata] = {14,16,20,25};	// pT bin lower edge
+	float dataX2[Ndata] = {16,20,25,30};	// pT bin higher edge
+	float dataX[Ndata] = {14.93,17.57,22.01,26.64};// pT bin center
+	float dataRaa[Ndata] = {0.2475,0.247,0.341,0.355};	
+	float dataEhigh[Ndata] = {0.048,0.052,0.087,0.119};
+	float dataElow[Ndata] = {0.042,0.048,0.038,0.082};	
+	TGraphAsymmErrors *grData;
+	grData = new TGraphAsymmErrors(Ndata,dataX,dataRaa,0,0,dataElow,dataEhigh);
 
 	// input 
-	const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE/results/", "../JETSCAPE-noFT/results/", "../JETSCAPE/results-SimpleIF/", "../JETSCAPE/results-SimpleIF/"};
+	const char * dir[kTotal] = {"../JETSCAPE/results/","../JETSCAPE/results-alphaS030/", "../JETSCAPE-zeroFT/results-alphaS030/", "../JETSCAPE/results-SimpleIF/", "../JETSCAPE/results-SimpleIF-alphaS030/"};
 
-	ifstream input[kTotal]; //pythia, LBT, LBT-simpleFT, LBTNoFT;
+	ifstream input[kTotal]; //pythia, LBT, LBTzeroFT, Pythia4S, LBT-simpleFT;
 
 	const int Npt = 14+1;		// +1 for the sum
 	int arrayMin[Npt]= {0 , 2 , 4 , 6  , 8 , 10 , 15 , 20 , 25 , 30 , 35 , 40 , 50 , 60, 0};		// last bin is sum
@@ -209,16 +226,16 @@ void compareRaa() {
 
 	// Raa
 	TH1D *hRaa = (TH1D*)hist[kLBT][Npt-1]->Clone("hRaa");hRaa->SetTitle("R_{AA} w/ timing");
-	TH1D *hRaaNoFT = (TH1D*)hist[kLBTNoFT][Npt-1]->Clone("hRaaNoFT");hRaaNoFT->SetTitle("R_{AA}");
+	TH1D *hRaazeroFT = (TH1D*)hist[kLBTzeroFT][Npt-1]->Clone("hRaazeroFT");hRaazeroFT->SetTitle("R_{AA}");
 	TH1D *hRaaSimpleFT = (TH1D*)hist[kLBTSimple][Npt-1]->Clone("hRaaSimpleFT");hRaaSimpleFT->SetTitle("R_{AA} w/ simple timing");
 	hRaa->Divide(hist[kPythia][Npt-1]);
-	hRaaNoFT->Divide(hist[kPythia][Npt-1]);
+	hRaazeroFT->Divide(hist[kPythia][Npt-1]);
 	hRaaSimpleFT->Divide(hist[kPythia4S][Npt-1]);
 	hRaa->GetYaxis()->SetTitle("R_{AA}");
-	hRaaNoFT->GetYaxis()->SetTitle("R_{AA}");
+	hRaazeroFT->GetYaxis()->SetTitle("R_{AA}");
 	hRaaSimpleFT->GetYaxis()->SetTitle("R_{AA}");
 	hRaa->GetXaxis()->SetTitle("jet_pT_sub");
-	hRaaNoFT->GetXaxis()->SetTitle("jet_pT_sub");
+	hRaazeroFT->GetXaxis()->SetTitle("jet_pT_sub");
 	hRaaSimpleFT->GetXaxis()->SetTitle("jet_pT_sub");
 
 
@@ -227,14 +244,21 @@ void compareRaa() {
 	// Drawing
 #ifdef DRAW
 	unsigned int color[kTotal] = {kMagenta+4, kBlue+4, kGreen+4, kMagenta+4, kRed+4};
+	unsigned int style[kTotal] = {35, 20, 21, 36, 47};
 	for(int t = 0; t<kTotal; t++) {
 		for(int i = 0; i<Npt; i++) {
 			hist[t][i]->SetLineColor(color[t]-i);
 			hist[t][i]->SetMarkerColor(color[t]-i);
 		}
-		hist[t][Npt-1]->SetMarkerStyle(8);
+		//hist[t][Npt-1]->SetMarkerStyle(8);
+		hist[t][Npt-1]->SetMarkerStyle(style[t]);
 	}
-	hist[kPythia4S][Npt-1]->SetMarkerStyle(4);
+	//hist[kPythia4S][Npt-1]->SetMarkerStyle(4);
+
+	grData->SetMarkerColor(2);
+	grData->SetLineColor(2);
+	grData->SetMarkerStyle(29);
+	grData->SetMarkerSize(2);
 
 	gStyle->SetOptStat(0);
 	gStyle->SetOptTitle(0);
@@ -271,7 +295,7 @@ void compareRaa() {
 	//l->AddEntry(hist[kPythia4S][Npt-1],"Pythia4S","pl");
 	//l->AddEntry(hist[kLBT][Npt-1],"LBT w/ f.t.","pl");
 	//l->AddEntry(hist[kLBTSimple][Npt-1],"LBT w/ simple f.t.","pl");
-	//l->AddEntry(hist[kLBTNoFT][Npt-1],"LBT default","pl");
+	//l->AddEntry(hist[kLBTzeroFT][Npt-1],"LBT default","pl");
 	l->Draw();
 
 
@@ -284,10 +308,10 @@ void compareRaa() {
 	hRaa->SetMarkerColor(hist[kLBT][Npt-1]->GetMarkerColor());
 	hRaa->SetMarkerStyle(hist[kLBT][Npt-1]->GetMarkerStyle());
 	hRaa->SetMarkerSize(1.5);
-	hRaaNoFT->SetLineColor(hist[kLBTNoFT][Npt-1]->GetLineColor());
-	hRaaNoFT->SetMarkerColor(hist[kLBTNoFT][Npt-1]->GetMarkerColor());
-	hRaaNoFT->SetMarkerStyle(hist[kLBTNoFT][Npt-1]->GetMarkerStyle());
-	hRaaNoFT->SetMarkerSize(1.5);
+	hRaazeroFT->SetLineColor(hist[kLBTzeroFT][Npt-1]->GetLineColor());
+	hRaazeroFT->SetMarkerColor(hist[kLBTzeroFT][Npt-1]->GetMarkerColor());
+	hRaazeroFT->SetMarkerStyle(hist[kLBTzeroFT][Npt-1]->GetMarkerStyle());
+	hRaazeroFT->SetMarkerSize(1.5);
 	hRaaSimpleFT->SetLineColor(hist[kLBTSimple][Npt-1]->GetLineColor());
 	hRaaSimpleFT->SetMarkerColor(hist[kLBTSimple][Npt-1]->GetMarkerColor());
 	hRaaSimpleFT->SetMarkerStyle(hist[kLBTSimple][Npt-1]->GetMarkerStyle());
@@ -303,13 +327,16 @@ void compareRaa() {
 
 
 	hRaa->Draw();
-	hRaaNoFT->Draw("same");
+	hRaazeroFT->Draw("same");
 	hRaaSimpleFT->Draw("same");
+
+	grData->Draw("psame");
 
 	TLegend *l2 = new TLegend(0.65,0.7,0.898,0.898);
 	l2->AddEntry(hRaa,LegendName[kLBT],"pl");//"LBT w/ f.t.","pl");
 	l2->AddEntry(hRaaSimpleFT,LegendName[kLBTSimple],"pl");//"LBT w/ simple f.t.","pl");
-	l2->AddEntry(hRaaNoFT,LegendName[kLBTNoFT],"pl");//"LBT no f.t.","pl");
+	l2->AddEntry(hRaazeroFT,LegendName[kLBTzeroFT],"pl");//"LBT no f.t.","pl");
+	l2->AddEntry(grData,"STAR Data","p");
 	l2->Draw();
 
 	TLine *line = new TLine(0,1,100,1);
@@ -318,11 +345,11 @@ void compareRaa() {
 #endif
 
 #ifdef SAVEROOT
-		TFile *fout = new TFile("Raa_FTvsSimplevsNo.root","RECREATE");
+		TFile *fout = new TFile("Raa_FTvsSimplevsZero_alphaS030.root","RECREATE");
 		for(int i = 0; i<kTotal; i++) for(int j = 0; j<Npt; j++) hist[i][j]->Write();
 		hRaa->Write(); 
 		hRaaSimpleFT->Write(); 
-		hRaaNoFT->Write();
+		hRaazeroFT->Write();
 #ifdef DRAW
 		for(int i = 0; i<kTotal+2; i++) c[i]->Write();
 #endif
