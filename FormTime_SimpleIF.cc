@@ -1,4 +1,18 @@
 //===========================================================
+// 
+// 2022.08.13
+// Li YI
+// use energy ratio as x instead of momentum 
+// notice previous dot production used for x causes negative 
+//
+//===========================================================
+// 
+// 2022.08.07
+// Li YI
+// should be 2*E_mother*x*(1-x)/kT^2..
+// while mother is the ancestor & daughter is final parton
+//
+//===========================================================
 //
 // 2021.09.17
 // Li Yi
@@ -55,11 +69,12 @@ int warning = 0;		// Print warning msg (1), no warning msg (0)
 
 
 double CalFormTime_SimpleIF(Vec4 mother, Vec4 daughter) {
-	double x = dot3(mother,daughter)/mother.pAbs2();
+	double x = 1.*daughter.e()/mother.e();// fabs(dot3(mother,daughter))/mother.pAbs2();
 	double kt = cross3(mother,daughter).pAbs()/mother.pAbs();
 	double time = 0; 
 	if(kt>0 || kt<0) {
-		time = 2.*daughter.e()/pow(kt,2);
+		//time = 2.*daughter.e()/pow(kt,2);
+		time = 2.*mother.e()*x*(1.-x)/pow(kt,2);
 	}
 	if(verbose) cout<<"mother e="<<mother.e()<<" daughter e="<<daughter.e()<<" x="<<x<<" kt="<<kt<<" time="<<time;
 	return time;
